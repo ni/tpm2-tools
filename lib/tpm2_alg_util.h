@@ -160,4 +160,23 @@ bool pcr_parse_digest_list(char **argv, int len,
  */
 UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
 
+/**
+ * Retrieves an approproate signature scheme (scheme) signable by
+ * specified key (keyHandle) and hash algorithm (halg).
+ * @param sapi_context
+ *  System API context for tpm
+ * @param keyHandle
+ *  Handle to key used in signing operation
+ * @param halg
+ *  Hash algoritm for message
+ * @param scheme
+ *  Signature scheme output
+ * @return
+ *  True if successful
+ *  False otherwise, and scheme is left unmodified
+ */
+bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg,
+        TPMT_SIG_SCHEME *scheme);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
