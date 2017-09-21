@@ -44,7 +44,12 @@ OPTIONS
 
   * `-o`, `--outFile`:
 
-    Output file path, recording the two structures output by tpm2_quote function.
+    Output file path, recording the two structures (quote and signature) output by tpm2_quote function.
+    Contains only one structure (quote) when -s is also specified
+
+  * **-s**, **--outSigFile**:
+
+    Output file path, recording the signature output by tpm2_quote function.
 
   * `-q`, `--qualifyData`:
 
