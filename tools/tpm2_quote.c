@@ -50,11 +50,12 @@ typedef struct {
 
 static TPMS_AUTH_COMMAND sessionData;
 static char *outFilePath, *outSigFilePath;
+static TPMI_ALG_HASH sigHashAlg;
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
 static bool is_auth_session;
 static TPMI_SH_AUTH_SESSION auth_session_handle;
-static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, s_flag;
+static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, s_flag, G_flag;
 static char *contextFilePath;
 static TPM_HANDLE akHandle;
 
@@ -235,7 +236,10 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
     sessionData.nonce.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
-    inScheme.scheme = TPM_ALG_NULL;
+    if (!G_flag || !get_signature_scheme(sapi_context, akHandle, sigHashAlg, &inScheme))
+    {
+        inScheme.scheme = TPM_ALG_NULL;
+    }
 
     memset( (void *)&signature, 0, sizeof(signature) );
 
@@ -356,6 +360,15 @@ static bool on_option(char key, char *value) {
         outSigFilePath = optarg;
         s_flag = 1;
         break;
+    case 'G':
+        sigHashAlg = tpm2_alg_util_from_optarg(optarg);
+        if (sigHashAlg == TPM_ALG_ERROR)
+        {
+            LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
+            return false;
+        }
+        G_flag = 1;
+        break;
     case 'q':
         qualifyingData.t.size = sizeof(qualifyingData) - 2;
         if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
@@ -388,11 +401,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "selList",              required_argument, NULL, 'L' },
         { "outFile",              required_argument, NULL, 'o' },
         { "outSigFile",           required_argument, NULL, 's' },
+        { "sigHashAlg",           required_argument, NULL, 'G' },
         { "qualifyData",          required_argument, NULL, 'q' },
         { "input-session-handle", required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:o:s:S:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:c:P:l:g:L:o:s:G:S:q:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;
