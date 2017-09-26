@@ -42,6 +42,7 @@
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "files.h"
 
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
 struct tpm_nvread_ctx {
@@ -134,7 +135,6 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    FILE *outputFp = NULL;
     UINT8 *data_buffer = malloc(data_size);
     if (!data_buffer) {
         LOG_ERR("oom");
@@ -168,14 +168,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* dump data_buffer to output file, if specified */
     if (ctx.output_file) {
-        outputFp = fopen(ctx.output_file, "w+");
-        if (!outputFp) {
-            LOG_ERR("Failed to open output file");
-            goto out;
-        }
-
-        if (fwrite(data_buffer, data_offset, 1, outputFp) != 1) {
-            LOG_ERR("Failed to write data to output file");
+        if (!files_save_bytes_to_file(ctx.output_file, data_buffer, data_offset)) {
             goto out;
         }
     }
@@ -183,8 +176,6 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
     result = true;
 
 out:
-    if (outputFp)
-        fclose(outputFp);
     free(data_buffer);
     return result;
 }
@@ -262,7 +253,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "index"       , required_argument, NULL, 'x' },
         { "authHandle"  , required_argument, NULL, 'a' },
-        { "out-file"    , required_argument, NULL, 'f' },
+        { "output"      , required_argument, NULL, 'f' },
         { "size"        , required_argument, NULL, 's' },
         { "offset"      , required_argument, NULL, 'o' },
         { "handlePasswd", required_argument, NULL, 'P' },
