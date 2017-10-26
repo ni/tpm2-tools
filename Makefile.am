@@ -77,6 +77,7 @@ bin_PROGRAMS = \
     tools/tpm2_pcrevent \
     tools/tpm2_pcrextend \
     tools/tpm2_pcrlist \
+    tools/tpm2_print_quote \
     tools/tpm2_quote \
     tools/tpm2_rc_decode \
     tools/tpm2_readpublic \
@@ -180,6 +181,7 @@ tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_rc_decode_SOURCES = tools/tpm2_rc_decode.c $(TOOL_SRC)
 tools_tpm2_flushallhandles_SOURCES = tools/tpm2_flushallhandles.c $(TOOL_SRC)
+tools_tpm2_print_quote_SOURCES = tools/tpm2_print_quote.c
 
 if UNIT
 TESTS = $(check_PROGRAMS)
