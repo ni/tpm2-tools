@@ -51,10 +51,6 @@ OPTIONS
 
     Output file path, recording the signature output by tpm2_quote function.
 
-  * **-G**, **--sigHashAlg**:
-
-    Hash algorithm for signature.
-
   * `-q`, `--qualifyData`:
 
     Data given as a Hex string to qualify the  quote, optional. This is typically
