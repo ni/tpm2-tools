@@ -57,6 +57,7 @@ struct tpm_createprimary_ctx {
     TPM2B_SENSITIVE_CREATE inSensitive;
     TPM2B_PUBLIC in_public;
     TPMI_ALG_PUBLIC type;
+    uint16_t aes_keysize;
     TPMI_ALG_HASH nameAlg;
     TPMI_RH_HIERARCHY hierarchy;
     bool is_policy_enforced;
@@ -79,6 +80,7 @@ static tpm_createprimary_ctx ctx = {
     .inSensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT,
     .in_public = TPM2B_EMPTY_INIT,
     .type = TPM_ALG_RSA,
+    .aes_keysize = 128,
     .nameAlg = TPM_ALG_SHA1,
     .hierarchy = TPM_RH_NULL,
     .is_policy_enforced = false
@@ -114,7 +116,7 @@ int setup_alg(void) {
     switch(ctx.type) {
     case TPM_ALG_RSA:
         ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
-        ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = ctx.aes_keysize;
         ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
         ctx.in_public.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
         ctx.in_public.t.publicArea.parameters.rsaDetail.keyBits = 2048;
@@ -131,7 +133,7 @@ int setup_alg(void) {
 
     case TPM_ALG_ECC:
         ctx.in_public.t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_AES;
-        ctx.in_public.t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
+        ctx.in_public.t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = ctx.aes_keysize;
         ctx.in_public.t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_CFB;
         ctx.in_public.t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
         ctx.in_public.t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
@@ -142,7 +144,7 @@ int setup_alg(void) {
 
     case TPM_ALG_SYMCIPHER:
         ctx.in_public.t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
-        ctx.in_public.t.publicArea.parameters.symDetail.sym.keyBits.sym = 128;
+        ctx.in_public.t.publicArea.parameters.symDetail.sym.keyBits.sym = ctx.aes_keysize;
         ctx.in_public.t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
         ctx.in_public.t.publicArea.unique.sym.t.size = 0;
         break;
@@ -251,6 +253,15 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.G = 1;
         break;
+    case 'B':
+        if (!tpm2_util_string_to_uint16(value, &ctx.aes_keysize)) {
+            LOG_ERR("Could not convert AES key size parameter to number, got: \"%s\"", value);
+            return false;
+        } else if (ctx.aes_keysize != 128 && ctx.aes_keysize != 192 && ctx.aes_keysize != 256) {
+            LOG_ERR("AES key size must be 128, 192 or 256");
+            return false;
+        }
+        break;
     case 'C':
         ctx.context_file = value;
         if(ctx.context_file == NULL || ctx.context_file[0] == '\0') {
@@ -288,6 +299,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"pwdk",1,NULL,'K'},
       {"halg",1,NULL,'g'},
       {"kalg",1,NULL,'G'},
+      {"aes-key-size",1,NULL,'B'},
       {"context",1,NULL,'C'},
       {"policy-file",1,NULL,'L'},
       {"enforce-policy",1,NULL,'E'},
@@ -298,7 +310,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    *opts = tpm2_options_new("A:P:K:g:G:C:L:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("A:P:K:g:G:B:C:L:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }
